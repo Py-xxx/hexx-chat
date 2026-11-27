@@ -254,7 +254,10 @@
   }
 
   function addChat(m) {
+    const maker = magic.isMaker(m.login);
+    if (maker && magic.cast(m)) return;
     if (isFiltered(m)) return;
+    const entrance = maker && !TEST && isNewThisStream(m.login);
     const returning = TEST ? !!m.sampleReturning : trackReturning(m);
 
     let text = m.text;
@@ -271,7 +274,7 @@
     const own = m.login === cfg.channel;
     const classes = [];
     if (m.firstMessage) classes.push('first');
-    else if (returning && !own) classes.push('returning');
+    else if (returning && !own && !maker) classes.push('returning');
     if (m.highlighted) classes.push('highlighted');
     if (m.action) classes.push('action');
     if (own) classes.push('own');
@@ -295,7 +298,7 @@
     meta.className = 'meta';
     const badges = document.createElement('span');
     badges.className = 'badges';
-    badges.innerHTML = HexxBadges.render(m.badges, m.badgeInfo);
+    badges.innerHTML = (maker ? HexxBadges.maker() : '') + HexxBadges.render(m.badges, m.badgeInfo);
     const name = document.createElement('span');
     name.className = 'name';
     name.textContent = m.displayName;
@@ -310,7 +313,9 @@
     if (emoteOnly) el.classList.add('emote-only');
 
     el.append(meta, body);
+    magic.decorate(el, m, { maker, entrance });
     insert(el);
+    magic.afterInsert(el);
     lastSingle = combo ? { key: combo.key, el } : null;
   }
 
@@ -411,6 +416,11 @@
     }, 3000);
   }
 
+  function isNewThisStream(login) {
+    const last = seen.users[String(login).toLowerCase()];
+    return !last || last < seen.start;
+  }
+
   function trackReturning(m) {
     const login = (m.login || '').toLowerCase();
     const last = seen.users[login];
@@ -486,8 +496,8 @@
     const spread = opts.spread || 1;
     for (let i = 0; i < count; i++) {
       const p = document.createElement('span');
-      p.className = 'particle';
-      p.innerHTML = HexxBadges.sparkle();
+      p.className = 'particle' + (opts.cls ? ' ' + opts.cls : '');
+      p.innerHTML = opts.html || HexxBadges.sparkle();
       p.style.left = (r.left + Math.random() * r.width) + 'px';
       p.style.top = (r.top + Math.random() * r.height) + 'px';
       p.style.setProperty('--dx', ((Math.random() * 40 - 20) * spread).toFixed(0) + 'px');
@@ -732,6 +742,14 @@
   }
 
   /* ---------------- Start ---------------- */
+
+  const magic = HexxMagic({
+    chatEl,
+    fxEl,
+    backEl: document.getElementById('fxBack'),
+    burst,
+    announce: (text, seconds) => addSystem(text, seconds),
+  });
 
   applyStyle();
 

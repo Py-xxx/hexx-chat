@@ -72,6 +72,26 @@
       '...lpP...',
       '....p....',
     ],
+    nova: [
+      '....w....',
+      '.k..a..k.',
+      '..k.g.k..',
+      '...aga...',
+      'waggwggaw',
+      '...aga...',
+      '..k.g.k..',
+      '.k..a..k.',
+      '....w....',
+    ],
+    skull: [
+      '.lllll.',
+      'lllllll',
+      'lPPlPPl',
+      'lPPlPPl',
+      'lllPlll',
+      '.lllll.',
+      '.lPlPl.',
+    ],
     sparkle: [
       '..a..',
       '..a..',
@@ -131,7 +151,7 @@
    * replace the built-in pixel sprites automatically. Missing files are fine,
    * that badge just keeps its sprite.
    */
-  const CUSTOM_FILES = ['broadcaster', 'moderator', 'vip', 'sub-1', 'sub-3', 'sub-6', 'sub-12'];
+  const CUSTOM_FILES = ['maker', 'broadcaster', 'moderator', 'vip', 'sub-1', 'sub-3', 'sub-6', 'sub-12'];
   const custom = {};
   for (const key of CUSTOM_FILES) {
     const img = new Image();
@@ -173,6 +193,8 @@
   window.HexxBadges = {
     render,
     sparkle: () => cached('sparkle', () => sprite(SPRITES.sparkle, 'sparkle-svg')),
+    skull: () => cached('skull', () => sprite(SPRITES.skull, 'sparkle-svg')),
+    maker: () => badge('maker', () => sprite(SPRITES.nova, 'badge')),
     sprite,
     moonRows,
   };

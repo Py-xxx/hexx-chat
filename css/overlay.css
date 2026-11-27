@@ -387,3 +387,293 @@ body:not(.hl-returning) .msg.returning .tag { display: none; }
   35% { transform: scale(1.3); filter: brightness(1.4); }
   100% { transform: scale(1); }
 }
+
+/* ======================================================================
+   ✦ a little magic ✦
+   ====================================================================== */
+
+#fxBack {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* ---------- Entrance + legendary cards ---------- */
+
+.msg.entrance .tag,
+.msg.legendary .tag {
+  display: inline-block;
+  background: linear-gradient(90deg, #ffd98a, #ff9ecf, #c9a2ff);
+  color: #2a0d3a;
+}
+.msg.entrance {
+  --border: rgba(255, 217, 138, 0.95);
+  --glow: rgba(255, 200, 110, 0.6);
+}
+.animate .msg.entrance { animation: entrance-in 1.1s cubic-bezier(0.2, 0.9, 0.3, 1.25) both; }
+@keyframes entrance-in {
+  0% { opacity: 0; transform: translateY(-34px) scale(0.8); filter: brightness(2.6); }
+  60% { opacity: 1; filter: brightness(1.6); }
+  100% { opacity: 1; transform: none; filter: none; }
+}
+
+.msg.legendary {
+  --border: transparent;
+  --glow: rgba(255, 200, 110, 0.55);
+}
+/* Shimmering rainbow-gold pixel frame */
+.msg.legendary::before {
+  content: '';
+  position: absolute;
+  inset: calc(var(--px) * -1);
+  padding: var(--px);
+  background: linear-gradient(90deg, #ffd98a, #ff9ecf, #c9a2ff, #a9b8ff, #ffb347, #ffd98a);
+  background-size: 300% 100%;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  clip-path: polygon(var(--px) 0, calc(100% - var(--px)) 0, calc(100% - var(--px)) var(--px), 100% var(--px),
+    100% calc(100% - var(--px)), calc(100% - var(--px)) calc(100% - var(--px)), calc(100% - var(--px)) 100%,
+    var(--px) 100%, var(--px) calc(100% - var(--px)), 0 calc(100% - var(--px)), 0 var(--px), var(--px) var(--px));
+  animation: legendary-border 2.4s linear infinite;
+  pointer-events: none;
+}
+/* A soft sheen sweeping across */
+.msg.legendary::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(110deg, transparent 35%, rgba(255, 244, 220, 0.2) 50%, transparent 65%);
+  background-size: 250% 100%;
+  animation: legendary-sheen 3s ease-in-out infinite;
+}
+@keyframes legendary-border { to { background-position: 300% 0; } }
+@keyframes legendary-sheen {
+  0% { background-position: 150% 0; }
+  60%, 100% { background-position: -100% 0; }
+}
+
+/* ---------- Shooting stars ---------- */
+
+.shooting-star {
+  position: absolute;
+  width: 130px;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, rgba(255, 217, 138, 0.55), #fff4dc);
+  transform-origin: 100% 50%;
+  opacity: 0;
+  filter: drop-shadow(0 0 6px #ffd98a);
+  animation: shoot var(--dur, 1.3s) linear forwards;
+}
+.shooting-star::after {
+  content: '';
+  position: absolute;
+  right: -7px;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  transform: translateY(-50%);
+  background: radial-gradient(circle, #fff 0, #ffd98a 40%, transparent 70%);
+}
+.shooting-star.big { width: 260px; height: 5px; }
+.shooting-star.big::after { width: 26px; height: 26px; right: -13px; }
+@keyframes shoot {
+  0% { opacity: 0; transform: translate(0, 0) rotate(var(--rot)); }
+  10%, 80% { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--tx), var(--ty)) rotate(var(--rot)); }
+}
+
+.particle.falling { animation-duration: 3.2s; animation-timing-function: linear; }
+.particle.smoke { width: calc(var(--font-size) * 1.4); height: calc(var(--font-size) * 1.4); filter: none; animation-duration: 1.8s; }
+.puff {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(200, 190, 210, 0.75), rgba(140, 120, 160, 0.35) 55%, transparent 70%);
+}
+
+/* ---------- !moonrise ---------- */
+
+.spell-moon {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: min(72vw, 360px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle at 42% 38%, #ffe7ad, #ffb347 55%, #d9772b 69%, transparent 70%);
+  transform: translate(-50%, 110%);
+  animation: moonrise 8.5s ease-in-out forwards;
+}
+.spell-moon img { width: 100%; height: 100%; display: block; }
+@keyframes moonrise {
+  0% { transform: translate(-50%, 110%); opacity: 0; filter: drop-shadow(0 0 20px rgba(255, 180, 80, 0.5)); }
+  15% { opacity: 0.85; }
+  42% { transform: translate(-50%, -38vh); filter: drop-shadow(0 0 30px rgba(255, 180, 80, 0.7)); }
+  50% { transform: translate(-50%, -38vh) scale(1.06); filter: drop-shadow(0 0 70px rgba(255, 200, 110, 1)) brightness(1.2); }
+  58% { transform: translate(-50%, -38vh) scale(1); filter: drop-shadow(0 0 30px rgba(255, 180, 80, 0.7)); }
+  72% { transform: translate(-50%, -38vh); opacity: 0.85; }
+  100% { transform: translate(-50%, 110%); opacity: 0; }
+}
+
+/* ---------- !hexx ---------- */
+
+body #chat .msg.hexed:not(.leaving) {
+  --border: #9b5cff;
+  --glow: rgba(140, 255, 170, 0.45);
+  background: rgba(40, 6, 70, 0.9);
+  animation: hex-wobble 0.32s ease-in-out infinite alternate;
+  animation-delay: var(--hex-delay, 0s);
+}
+.msg.hexed .name { color: #9dffb9 !important; }
+.msg.hexed .text { animation: hex-glitch 0.22s steps(2) infinite; }
+@keyframes hex-wobble {
+  0% { transform: rotate(-1.6deg) translateX(-3px) skewX(-3deg); }
+  100% { transform: rotate(1.6deg) translateX(3px) skewX(3deg); }
+}
+@keyframes hex-glitch {
+  0% { text-shadow: 2px 0 #ff5cf0, -2px 0 #6bffb0; }
+  100% { text-shadow: -2px 0 #ff5cf0, 2px 0 #6bffb0; }
+}
+
+/* ---------- !d20 ---------- */
+
+.spell-d20 {
+  position: absolute;
+  left: 50%;
+  top: 36%;
+  width: calc(var(--font-size) * 6.5);
+  height: calc(var(--font-size) * 6.5);
+  margin-left: calc(var(--font-size) * -3.25);
+  animation: d20-tumble 1.65s cubic-bezier(0.3, 0.1, 0.4, 1) forwards;
+  transition: opacity 0.8s;
+}
+.spell-d20 svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 0 10px rgba(166, 107, 255, 0.7)); }
+.d20-num {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 46%;
+  text-align: center;
+  font: 700 calc(var(--font-size) * 1.5) / 1 'Pixelify Sans', sans-serif;
+  color: #fff4dc;
+  text-shadow: 0 2px 0 #1a0826, 0 0 8px rgba(255, 217, 138, 0.8);
+}
+.d20-label {
+  position: absolute;
+  left: 50%;
+  top: 104%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font: 700 calc(var(--font-size) * 1.1) 'Pixelify Sans', sans-serif;
+  color: #ffd98a;
+  text-shadow: 0 0 10px rgba(255, 200, 110, 0.8), 0 2px 2px #1a0826;
+  padding: 0.15em 0.6em;
+  background: rgba(26, 8, 40, 0.9);
+  box-shadow: 0 0 0 var(--px) rgba(255, 217, 138, 0.8), 0 0 18px rgba(255, 200, 110, 0.5);
+}
+.d20-label:empty { display: none; }
+.spell-d20.nat1 .d20-label { color: #bfa6cf; text-shadow: 0 2px 2px #1a0826; box-shadow: 0 0 0 var(--px) rgba(191, 166, 207, 0.6); }
+.spell-d20.landed svg { animation: d20-land 0.5s ease-out; }
+.spell-d20.nat20 svg { filter: drop-shadow(0 0 22px #ffd98a) brightness(1.15); }
+.spell-d20.nat1 svg { filter: grayscale(0.6) brightness(0.75); }
+.spell-d20.gone { opacity: 0; }
+@keyframes d20-tumble {
+  0% { transform: translateY(-70vh) rotate(0deg); }
+  70% { transform: translateY(0) rotate(900deg); }
+  82% { transform: translateY(-28px) rotate(1010deg); }
+  100% { transform: translateY(0) rotate(1080deg); }
+}
+@keyframes d20-land { 0% { transform: scale(1.15); } 100% { transform: scale(1); } }
+
+/* ---------- !levitate ---------- */
+
+.levitating #chat .msg:not(.leaving) {
+  animation: levitate 2.6s ease-in-out infinite;
+  animation-delay: var(--lev-delay, 0s);
+}
+@keyframes levitate {
+  0%, 100% { transform: translateY(0) rotate(-0.7deg); }
+  50% { transform: translateY(-10px) rotate(0.7deg); }
+}
+
+/* ---------- !fortune ---------- */
+
+.spell-tarot {
+  position: absolute;
+  left: 50%;
+  top: 20%;
+  width: min(80vw, calc(var(--font-size) * 13));
+  transform: translateX(-50%);
+  perspective: 900px;
+}
+.tarot-inner {
+  padding: 1em 1.1em 0.9em;
+  font-size: var(--font-size);
+  text-align: center;
+  color: #fbeefe;
+  background: linear-gradient(165deg, rgba(70, 26, 110, 0.96), rgba(26, 8, 40, 0.96));
+  box-shadow:
+    0 calc(var(--px) * -1) 0 0 #ffd98a,
+    0 var(--px) 0 0 #ffd98a,
+    calc(var(--px) * -1) 0 0 0 #ffd98a,
+    var(--px) 0 0 0 #ffd98a,
+    0 0 30px 6px rgba(255, 200, 110, 0.45);
+  animation: tarot-flip 0.95s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+.tarot-moon { height: 2em; width: auto; filter: drop-shadow(0 0 8px rgba(255, 180, 80, 0.8)); }
+.tarot-title { font: 600 0.75em 'Pixelify Sans', sans-serif; letter-spacing: 0.08em; color: #ff9ecf; margin: 0.4em 0; }
+.tarot-text { font: 700 1em/1.35 'Nunito', sans-serif; }
+.tarot-foot { margin-top: 0.5em; font-size: 0.8em; color: #ffd98a; letter-spacing: 0.3em; }
+.spell-tarot.gone .tarot-inner { animation: tarot-out 0.75s ease-in forwards; }
+@keyframes tarot-flip {
+  0% { opacity: 0; transform: rotateY(180deg) scale(0.6); }
+  50% { opacity: 1; }
+  100% { opacity: 1; transform: rotateY(0) scale(1); }
+}
+@keyframes tarot-out { to { opacity: 0; transform: rotateY(-90deg) scale(0.9); } }
+
+/* ---------- !blessing ---------- */
+
+.msg.blessed { --glow: rgba(255, 200, 110, 0.5); }
+.msg.blessed .name {
+  color: #ffd98a !important;
+  animation: blessed-glow 1.1s ease-in-out infinite alternate;
+}
+@keyframes blessed-glow {
+  from { text-shadow: 0 0 6px rgba(255, 200, 110, 0.7), 0 1px 2px rgba(10, 0, 20, 0.9); }
+  to { text-shadow: 0 0 16px #ffd98a, 0 0 30px rgba(255, 200, 110, 0.85), 0 1px 2px rgba(10, 0, 20, 0.9); }
+}
+
+/* ---------- !summon ---------- */
+
+.msg.summoned {
+  --border: #d9b8ff;
+  --glow: rgba(201, 162, 255, 0.6);
+}
+.animate .msg.summoned { animation: summon-in 1s cubic-bezier(0.2, 0.9, 0.3, 1.3) both; }
+@keyframes summon-in {
+  0% { opacity: 0; transform: scale(0.2); filter: brightness(3); }
+  60% { opacity: 1; filter: brightness(1.6); }
+  100% { transform: none; filter: none; }
+}
+.magic-circle {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(100%, calc(var(--font-size) * 11));
+  aspect-ratio: 1;
+  z-index: -1;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 0 8px rgba(201, 162, 255, 0.9));
+  animation: circle-in 0.9s ease-out both;
+  transition: opacity 0.8s;
+}
+.magic-circle svg { width: 100%; height: 100%; display: block; animation: circle-spin 7s linear infinite; }
+.magic-circle.gone { opacity: 0; }
+@keyframes circle-in { from { opacity: 0; transform: translate(-50%, -50%) scale(0.3); } }
+@keyframes circle-spin { to { transform: rotate(360deg); } }
