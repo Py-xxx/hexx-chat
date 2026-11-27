@@ -1,0 +1,258 @@
+/* CinnamonHexx chat overlay — translucent pixel-glow cards.
+   Colour values are set from JS as CSS variables (no color-mix, so it works on
+   older OBS builds). */
+
+:root {
+  --font-size: 20px;
+  --emote-h: calc(var(--font-size) * 1.6);
+  --px: 3px;                               /* pixel border thickness */
+  --card-bg: rgba(24, 8, 40, 0.55);
+  --card-bg-hi: rgba(56, 22, 84, 0.62);
+  --border: rgba(255, 179, 71, 0.75);
+  --glow: rgba(255, 179, 71, 0.28);
+  --accent: #ffb347;
+  --pink: #ff9ecf;
+  --pink-border: rgba(255, 158, 207, 0.85);
+  --pink-glow: rgba(255, 158, 207, 0.35);
+  --text: #fbeefe;
+  --name-font: 'Pixelify Sans', 'Nunito', sans-serif;
+  --text-font: 'Nunito', 'Segoe UI', system-ui, sans-serif;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+}
+
+#chat {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-start;
+  padding: 14px 16px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.align-right #chat { align-items: flex-end; }
+.dir-down #chat { justify-content: flex-start; }
+
+/* Soft fade where old messages leave the column */
+.edge-fade.dir-up #chat {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 90px);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 90px);
+}
+.edge-fade.dir-down #chat {
+  -webkit-mask-image: linear-gradient(to top, transparent 0, #000 90px);
+  mask-image: linear-gradient(to top, transparent 0, #000 90px);
+}
+
+#fx {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* ---------- Message card ---------- */
+
+.msg {
+  position: relative;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  max-width: calc(100% - var(--px) * 2);
+  margin: calc(var(--px) + 7px) var(--px);
+  padding: 0.42em 0.7em 0.5em;
+  background: var(--card-bg);
+  color: var(--text);
+  font-family: var(--text-font);
+  font-weight: 700;
+  font-size: var(--font-size);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  text-shadow: 0 1px 2px rgba(10, 0, 20, 0.85);
+  /* Pixel border: four offset shadows leave the corners empty = stepped corners */
+  box-shadow:
+    0 calc(var(--px) * -1) 0 0 var(--border),
+    0 var(--px) 0 0 var(--border),
+    calc(var(--px) * -1) 0 0 0 var(--border),
+    var(--px) 0 0 0 var(--border),
+    0 0 16px 3px var(--glow);
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.28em;
+  margin-bottom: 0.12em;
+}
+
+.badges { display: inline-flex; align-items: center; gap: 0.22em; }
+.hide-badges .badges { display: none; }
+
+.badge {
+  height: 0.9em;
+  width: auto;
+  filter: drop-shadow(0 0 3px rgba(255, 179, 71, 0.55));
+}
+
+.name {
+  font-family: var(--name-font);
+  font-weight: 700;
+  color: var(--name, var(--accent));
+  text-shadow: 0 0 8px var(--name-glow, var(--glow)), 0 1px 2px rgba(10, 0, 20, 0.9);
+  letter-spacing: 0.02em;
+}
+
+.font-name-pixel .name { font-size: 0.95em; font-weight: 600; }
+.font-name-script .name { font-size: 1.22em; line-height: 1.1; letter-spacing: 0; }
+.font-text-pixel .msg { font-weight: 500; }
+
+.tag {
+  font-family: 'Pixelify Sans', sans-serif;
+  font-size: 0.58em;
+  font-weight: 600;
+  padding: 0.08em 0.45em;
+  color: #2a0d3a;
+  background: var(--pink);
+  text-shadow: none;
+  letter-spacing: 0.03em;
+}
+
+.reply {
+  font-size: 0.7em;
+  opacity: 0.7;
+  margin-bottom: 0.1em;
+}
+
+.text { white-space: pre-wrap; }
+.action .text { font-style: italic; color: var(--name, var(--text)); }
+.at { color: var(--accent); }
+
+/* Inline layout: "Name: message" */
+.layout-inline .meta { display: inline-flex; margin: 0 0.3em 0 0; vertical-align: baseline; }
+.layout-inline .meta::after { content: ':'; margin-left: -0.15em; color: var(--text); }
+.layout-inline .action .meta::after { content: ''; }
+.layout-inline .text { display: inline; }
+.layout-inline .reply { display: block; }
+
+/* ---------- Emotes ---------- */
+
+.emote-group {
+  display: inline-grid;
+  vertical-align: middle;
+  margin: -0.3em 0.06em;
+}
+.emote-group > img {
+  grid-area: 1 / 1;
+  height: var(--emote-h);
+  width: auto;
+  justify-self: center;
+  align-self: center;
+}
+.emote-group > img.zw { height: var(--emote-h); }
+.emote-only .emote-group > img { height: calc(var(--emote-h) * 1.5); }
+.emote-only .emote-group { margin: 0.05em 0.08em; }
+
+/* ---------- Highlights ---------- */
+
+.hl-first .msg.first {
+  --border: var(--pink-border);
+  --glow: var(--pink-glow);
+}
+.msg.first .tag { display: inline-block; }
+.tag { display: none; }
+body:not(.hl-first) .msg.first .tag { display: none; }
+
+.hl-mention .msg.mention {
+  background: var(--card-bg-hi);
+  box-shadow:
+    0 calc(var(--px) * -1) 0 0 var(--accent),
+    0 var(--px) 0 0 var(--accent),
+    calc(var(--px) * -1) 0 0 0 var(--accent),
+    var(--px) 0 0 0 var(--accent),
+    0 0 22px 6px var(--glow);
+}
+.msg.highlighted { background: var(--card-bg-hi); }
+
+.msg.system {
+  font-family: 'Pixelify Sans', sans-serif;
+  font-weight: 600;
+  font-size: calc(var(--font-size) * 0.8);
+  color: var(--accent);
+  letter-spacing: 0.03em;
+}
+
+/* ---------- Sparkle decoration ---------- */
+
+.spark {
+  position: absolute;
+  top: calc(-0.42em - var(--px));
+  right: 0.6em;
+  width: 0.62em;
+  height: 0.62em;
+  display: none;
+  filter: drop-shadow(0 0 4px rgba(255, 210, 130, 0.9));
+}
+.align-right .spark { right: auto; left: 0.6em; }
+.sparkles .spark { display: block; }
+.spark svg, .particle svg { width: 100%; height: 100%; display: block; }
+
+/* ---------- Animations ---------- */
+
+.animate .msg { animation: enter-left 0.48s cubic-bezier(0.2, 0.9, 0.3, 1.15) both; }
+.animate.align-right .msg { animation-name: enter-right; }
+.animate .spark { animation: twinkle 2.6s ease-in-out infinite; }
+
+@keyframes enter-left {
+  from { opacity: 0; transform: translateX(-24px) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes enter-right {
+  from { opacity: 0; transform: translateX(24px) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes twinkle {
+  0%, 100% { opacity: 0.35; transform: scale(0.65); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+
+.msg.fading {
+  opacity: 0 !important;
+  transform: translateY(-6px) scale(0.98);
+  filter: blur(2px);
+  transition: opacity 0.7s ease, transform 0.7s ease, filter 0.7s ease;
+}
+.msg.fast.fading { transition-duration: 0.3s; }
+.msg.collapsing {
+  height: 0 !important;
+  margin-top: 0;
+  margin-bottom: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  overflow: hidden;
+  transition: height 0.35s ease, margin 0.35s ease, padding 0.35s ease;
+}
+
+.particle {
+  position: absolute;
+  width: calc(var(--font-size) * 0.55);
+  height: calc(var(--font-size) * 0.55);
+  filter: drop-shadow(0 0 4px rgba(255, 210, 130, 0.95));
+  animation: float-away 1.25s ease-out forwards;
+}
+@keyframes float-away {
+  0% { opacity: 0; transform: translate(0, 0) scale(0.4) rotate(0deg); }
+  20% { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(1) rotate(var(--rot)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate .msg, .animate .spark { animation: none; }
+}

@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hexx Chat Settings</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Nunito:wght@500;600;700;800&family=Pixelify+Sans:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/settings.css">
+</head>
+<body>
+  <header class="top">
+    <h1><span class="script">Hexx</span> Chat <small>overlay settings</small></h1>
+    <p>Change anything on the right, watch the preview, then copy the link into OBS.</p>
+  </header>
+
+  <main class="layout">
+    <!-- ============ Preview + OBS link ============ -->
+    <section class="left">
+      <div class="panel preview-panel">
+        <div class="panel-head">
+          <h2>✦ Preview</h2>
+          <div class="seg" role="radiogroup" aria-label="Preview source">
+            <button type="button" data-preview="sample" class="on">Sample chat</button>
+            <button type="button" data-preview="live">Live chat</button>
+          </div>
+        </div>
+        <div class="stage" id="stage">
+          <div class="stage-inner" id="stageInner">
+            <iframe id="previewFrame" title="Chat overlay preview"></iframe>
+            <div class="col-outline" id="colOutline"></div>
+          </div>
+        </div>
+        <p class="hint" id="previewHint">Sample messages use Twitch emotes plus emotes from 7TV, BTTV and FFZ.</p>
+      </div>
+
+      <div class="panel obs-panel">
+        <h2>✦ Add it to OBS</h2>
+        <ol class="steps">
+          <li>Click <b>Copy link</b> below.</li>
+          <li>In OBS, click <b>+</b> under <i>Sources</i> → <b>Browser</b> → name it <i>Chat</i>.</li>
+          <li>Paste the link into <b>URL</b>, set <b>Width</b> to <b id="obsW">400</b> and <b>Height</b> to <b>1080</b>, then click OK.</li>
+          <li>Drag the chat column to the side of your scene.</li>
+        </ol>
+        <div class="url-row">
+          <input id="overlayUrl" type="text" readonly aria-label="Overlay link">
+          <button type="button" id="copyBtn" class="btn primary">Copy link</button>
+        </div>
+        <p class="hint warn" id="noChannelWarn">Enter your channel name first.</p>
+        <p class="hint" id="fileHint" hidden>
+          You're running this from a file on your computer. The link still works in OBS on this PC
+          as long as the folder stays where it is.
+        </p>
+        <p class="hint">Changed a setting later? Copy the new link and paste it over the old one in the Browser source.</p>
+
+        <details class="import">
+          <summary>Edit an existing link</summary>
+          <div class="url-row">
+            <input id="importUrl" type="text" placeholder="Paste a link you copied before">
+            <button type="button" id="importBtn" class="btn">Load</button>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <!-- ============ Settings ============ -->
+    <section class="right" id="form">
+      <div class="panel">
+        <h2>✦ Channel</h2>
+        <label class="field">
+          <span>Twitch channel name</span>
+          <input type="text" name="channel" placeholder="cinnamonhexx" autocomplete="off" spellcheck="false">
+        </label>
+        <p class="hint">No login needed. The overlay only reads chat.</p>
+      </div>
+
+      <div class="panel">
+        <h2>✦ Text &amp; size</h2>
+        <label class="field range">
+          <span>Text size <output data-for="fontSize"></output></span>
+          <input type="range" name="fontSize" min="12" max="44" step="1">
+        </label>
+        <label class="field range">
+          <span>Emote size <output data-for="emoteScale"></output></span>
+          <input type="range" name="emoteScale" min="1" max="3" step="0.1">
+        </label>
+        <div class="row2">
+          <label class="field">
+            <span>Name font</span>
+            <select name="nameFont">
+              <option value="pixel">Pixel</option>
+              <option value="script">Script</option>
+              <option value="clean">Clean</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Message font</span>
+            <select name="textFont">
+              <option value="clean">Clean (easiest to read)</option>
+              <option value="pixel">Pixel</option>
+            </select>
+          </label>
+        </div>
+        <label class="field">
+          <span>Layout</span>
+          <select name="layout">
+            <option value="stacked">Name above message</option>
+            <option value="inline">Name: message on one line</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="panel">
+        <h2>✦ Messages</h2>
+        <label class="field range">
+          <span>Fade out after <output data-for="lifetime"></output></span>
+          <input type="range" name="lifetime" min="0" max="300" step="5">
+        </label>
+        <label class="field range">
+          <span>Max messages on screen <output data-for="maxMessages"></output></span>
+          <input type="range" name="maxMessages" min="1" max="30" step="1">
+        </label>
+        <div class="row2">
+          <label class="field">
+            <span>New messages appear</span>
+            <select name="direction">
+              <option value="up">At the bottom</option>
+              <option value="down">At the top</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Cards line up on the</span>
+            <select name="align">
+              <option value="left">Left</option>
+              <option value="right">Right</option>
+            </select>
+          </label>
+        </div>
+        <label class="field range">
+          <span>Column width in OBS <output data-for="width"></output></span>
+          <input type="range" name="width" min="240" max="800" step="10">
+        </label>
+      </div>
+
+      <div class="panel">
+        <h2>✦ Look</h2>
+        <label class="field range">
+          <span>Card background <output data-for="cardOpacity"></output></span>
+          <input type="range" name="cardOpacity" min="0" max="100" step="5">
+        </label>
+        <div class="field">
+          <span>Glow colour</span>
+          <div class="swatches">
+            <button type="button" class="swatch" data-color="#ffb347" style="--c:#ffb347" title="Moon amber"></button>
+            <button type="button" class="swatch" data-color="#ff9ecf" style="--c:#ff9ecf" title="Hexx pink"></button>
+            <button type="button" class="swatch" data-color="#c9a2ff" style="--c:#c9a2ff" title="Lavender"></button>
+            <button type="button" class="swatch" data-color="#ffd36e" style="--c:#ffd36e" title="Candle gold"></button>
+            <button type="button" class="swatch" data-color="#ff8a5c" style="--c:#ff8a5c" title="Cinnamon"></button>
+            <label class="swatch custom" title="Pick any colour"><input type="color" name="accent"></label>
+          </div>
+        </div>
+        <label class="field">
+          <span>Name colours</span>
+          <select name="nameColors">
+            <option value="theme">Match the theme</option>
+            <option value="twitch">Each viewer's Twitch colour</option>
+          </select>
+        </label>
+        <div class="toggles">
+          <label class="toggle"><input type="checkbox" name="badges"><span>Badges (moons, stars &amp; crystals)</span></label>
+          <label class="toggle"><input type="checkbox" name="animations"><span>Animations</span></label>
+          <label class="toggle"><input type="checkbox" name="sparkles"><span>Sparkles</span></label>
+          <label class="toggle"><input type="checkbox" name="edgeFade"><span>Soft fade at the column edge</span></label>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>✦ Emotes</h2>
+        <p class="hint">Twitch emotes are always on. Turn on the extra emote services your channel uses.</p>
+        <div class="toggles">
+          <label class="toggle"><input type="checkbox" name="emotes7tv"><span>7TV</span></label>
+          <label class="toggle"><input type="checkbox" name="emotesBttv"><span>BetterTTV</span></label>
+          <label class="toggle"><input type="checkbox" name="emotesFfz"><span>FrankerFaceZ</span></label>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>✦ Highlights</h2>
+        <div class="toggles">
+          <label class="toggle"><input type="checkbox" name="highlightFirst"><span>Pink glow for first-time chatters</span></label>
+          <label class="toggle"><input type="checkbox" name="highlightMentions"><span>Brighter glow when someone @mentions you</span></label>
+          <label class="toggle"><input type="checkbox" name="showConnected"><span>Show "connected" message when OBS loads it</span></label>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>✦ Filters</h2>
+        <div class="toggles">
+          <label class="toggle"><input type="checkbox" name="hideCommands"><span>Hide !commands</span></label>
+          <label class="toggle"><input type="checkbox" name="hideBots"><span>Hide bots</span></label>
+        </div>
+        <label class="field">
+          <span>Bot names (comma separated)</span>
+          <textarea name="bots" rows="2" spellcheck="false"></textarea>
+        </label>
+        <label class="field">
+          <span>Always hide these users</span>
+          <textarea name="blockedUsers" rows="2" placeholder="username1, username2" spellcheck="false"></textarea>
+        </label>
+        <label class="field">
+          <span>Hide messages containing</span>
+          <textarea name="blockedWords" rows="2" placeholder="spoiler, some word" spellcheck="false"></textarea>
+        </label>
+      </div>
+
+      <div class="reset-row">
+        <button type="button" id="resetBtn" class="btn ghost">Reset everything to default</button>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status"></div>
+
+  <script src="js/config.js"></script>
+  <script src="js/settings.js"></script>
+</body>
+</html>
