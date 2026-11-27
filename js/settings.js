@@ -4,7 +4,7 @@
   const STORE_KEY = 'hexx-chat-settings';
 
   // Changing these needs the preview to reload; everything else restyles live.
-  const RELOAD_KEYS = ['channel', 'direction', 'emotes7tv', 'emotesBttv', 'emotesFfz', 'showConnected', 'counter', 'counterWords'];
+  const RELOAD_KEYS = ['channel', 'direction', 'emotes7tv', 'emotesBttv', 'emotesFfz', 'showConnected', 'counter', 'counterWords', 'counterMilestone'];
 
   const $ = (sel) => document.querySelector(sel);
   const form = $('#form');
@@ -72,6 +72,7 @@
       maxMessages: (v) => v,
       cardOpacity: (v) => (v == 0 ? 'none' : v + '%'),
       badgeScale: (v) => (+v).toFixed(1) + '×',
+      counterMilestone: (v) => (v == 0 ? 'never' : v + ' counts'),
       width: (v) => v + 'px',
     };
     for (const out of document.querySelectorAll('output[data-for]')) {

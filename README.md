@@ -64,11 +64,13 @@ load its settings.
 | Card background | How see-through the cards are (0 = text only) |
 | Glow colour | Border and glow colour of the cards |
 | Name colours | Matched to the theme, or each viewer's own Twitch colour (brightened so it's readable) |
-| Badges | Broadcaster = triple moon, Mod = star, VIP = crystal, Subs = a moon that fills up (crescent → full at 12 months) |
+| Badges | Broadcaster = triple moon, Mod = star wand, VIP = crystal, Subs = a moon that fills up (crescent → full at 12 months) |
 | Emotes | Turn 7TV / BTTV / FFZ on or off. Twitch emotes always work |
 | Filters | Hide bots, `!commands`, specific users or words |
 | Badge size | Makes badges bigger or smaller (useful for custom badge art) |
-| Highlights | Pink glow for first-time chatters, brighter glow when someone @mentions the streamer |
+| Combos | When chat spams the same emote, it becomes one growing "catJAM × 12" card instead of a wall of messages |
+| Tidy links | Links show as just the website, e.g. `🔗 imgur.com` |
+| Highlights | Pink glow for first-time chatters, lavender "welcome back" when a regular chats for the first time this stream, a golden card for the streamer's own messages, brighter glow when someone @mentions the streamer |
 | Word counter | Counts how many messages this stream contained a word (see below) |
 
 Messages deleted by a mod, and messages from users who get banned or timed
@@ -85,10 +87,19 @@ it as a **second Browser source** (400 × 200) and put it anywhere on screen.
 - The count survives OBS restarts and starts over after 6 hours with no new
   counts, which in practice means the next stream.
 - You and your mods can type `!resetcount` or `!setcount 42` in chat.
+- **Celebrate every** (default 100): when the count hits a multiple, the counter
+  wobbles, glows and showers sparkles. Set it to 0 to turn it off.
+
+## Welcome back
+
+The overlay remembers who has chatted (stored inside OBS). A new stream starts
+after 6 hours without chat. When someone who chatted in an earlier stream sends
+their first message of the new one, they get a lavender "welcome back" tag.
+It starts working from the second stream with the overlay, once it has seen people.
 
 ## Custom badge art
 
-Put square PNGs with transparent backgrounds into `assets/badges/` (on GitHub:
+The badges in `assets/badges/` are the current set. To swap one, put a square PNG with a transparent background into `assets/badges/` (on GitHub:
 open the folder → **Add file → Upload files**). Any file found replaces the
 built-in pixel badge, and badges without a file keep the pixel version:
 

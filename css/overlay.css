@@ -135,6 +135,13 @@ body {
 .text { white-space: pre-wrap; }
 .action .text { font-style: italic; color: var(--name, var(--text)); }
 .at { color: var(--accent); }
+.link {
+  font-size: 0.82em;
+  color: #e3c4ff;
+  background: rgba(201, 162, 255, 0.16);
+  padding: 0.05em 0.4em;
+  white-space: nowrap;
+}
 
 /* Inline layout: "Name: message" */
 .layout-inline .meta { display: inline-flex; margin: 0 0.3em 0 0; vertical-align: baseline; }
@@ -167,9 +174,29 @@ body {
   --border: var(--pink-border);
   --glow: var(--pink-glow);
 }
-.msg.first .tag { display: inline-block; }
 .tag { display: none; }
-body:not(.hl-first) .msg.first .tag { display: none; }
+.msg.first .tag, .msg.returning .tag { display: inline-block; }
+body:not(.hl-first) .msg.first .tag,
+body:not(.hl-returning) .msg.returning .tag { display: none; }
+
+/* Welcome back: a regular's first message of the stream */
+.hl-returning .msg.returning {
+  --border: rgba(201, 162, 255, 0.9);
+  --glow: rgba(201, 162, 255, 0.38);
+}
+.msg.returning .tag { background: #c9a2ff; }
+
+/* The streamer's own messages: a warm golden card */
+.hl-own .msg.own {
+  --border: rgba(255, 217, 138, 0.95);
+  --glow: rgba(255, 190, 100, 0.5);
+  --name: #ffd98a;
+  --name-glow: rgba(255, 200, 110, 0.75);
+  background: linear-gradient(120deg, var(--card-bg-own) 0%, var(--card-bg) 85%);
+}
+.hl-own .msg.own .text { color: #fff4dc; }
+.hl-own .msg.own .spark { display: block; }
+.hl-own .msg.own .name { color: #ffd98a; text-shadow: 0 0 10px rgba(255, 200, 110, 0.8), 0 1px 2px rgba(10, 0, 20, 0.9); }
 
 .hl-mention .msg.mention {
   background: var(--card-bg-hi);
@@ -181,6 +208,39 @@ body:not(.hl-first) .msg.first .tag { display: none; }
     0 0 22px 6px var(--glow);
 }
 .msg.highlighted { background: var(--card-bg-hi); }
+
+/* ---------- Emote combos ---------- */
+
+.combo-row { display: flex; align-items: center; gap: 0.3em; }
+.combo .emote-group { margin: 0.05em 0.1em 0.05em 0; }
+.combo .emote-group > img { height: calc(var(--emote-h) * 1.5); }
+.combo-x {
+  font-family: 'Pixelify Sans', sans-serif;
+  font-weight: 600;
+  font-size: 1.1em;
+  color: var(--pink);
+  text-shadow: 0 0 8px rgba(255, 158, 207, 0.6);
+}
+.combo-num {
+  display: inline-block;
+  min-width: 1ch;
+  font-family: 'Pixelify Sans', sans-serif;
+  font-weight: 700;
+  font-size: 1.9em;
+  line-height: 1;
+  color: var(--accent);
+  text-shadow: 0 0 12px var(--glow), 0 0 3px var(--accent), 0 2px 2px rgba(10, 0, 20, 0.9);
+}
+.combo-label {
+  font-family: 'Pixelify Sans', sans-serif;
+  font-weight: 600;
+  font-size: 0.55em;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: #e3c4ff;
+  opacity: 0.85;
+  margin-top: 0.1em;
+}
 
 .msg.system {
   font-family: 'Pixelify Sans', sans-serif;
@@ -307,7 +367,21 @@ body:not(.hl-first) .msg.first .tag { display: none; }
   text-shadow: 0 0 14px var(--glow), 0 0 4px var(--accent), 0 2px 2px rgba(10, 0, 20, 0.9);
   font-variant-numeric: tabular-nums;
 }
-.animate .counter-num.bump { animation: bump 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.4); }
+.animate .bump { animation: bump 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.4); }
+
+/* Milestone celebration */
+.counter-card.milestone .counter-label { color: #ffd98a; }
+.animate .counter-card.milestone { animation: milestone 2.4s ease-out; }
+@keyframes milestone {
+  0% { transform: scale(1); }
+  8% { transform: scale(1.22) rotate(-3deg); box-shadow: 0 0 0 var(--px) #ff9ecf, 0 0 40px 14px rgba(255, 158, 207, 0.7); }
+  16% { transform: scale(1.14) rotate(3deg); }
+  24% { transform: scale(1.18) rotate(-2deg); box-shadow: 0 0 0 var(--px) #ffd98a, 0 0 46px 16px rgba(255, 200, 110, 0.75); }
+  34% { transform: scale(1.1) rotate(1deg); }
+  50% { transform: scale(1.06); box-shadow: 0 0 0 var(--px) var(--accent), 0 0 30px 8px var(--glow); }
+  100% { transform: scale(1); }
+}
+.particle.big { width: calc(var(--font-size) * 0.9); height: calc(var(--font-size) * 0.9); animation-duration: 1.7s; }
 @keyframes bump {
   0% { transform: scale(1); }
   35% { transform: scale(1.3); filter: brightness(1.4); }

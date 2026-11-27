@@ -187,6 +187,8 @@
           <label class="toggle"><input type="checkbox" name="animations"><span>Animations</span></label>
           <label class="toggle"><input type="checkbox" name="sparkles"><span>Sparkles</span></label>
           <label class="toggle"><input type="checkbox" name="edgeFade"><span>Soft fade at the column edge</span></label>
+          <label class="toggle"><input type="checkbox" name="combos"><span>Combos: emote spam becomes one growing "catJAM × 12" card</span></label>
+          <label class="toggle"><input type="checkbox" name="tidyLinks"><span>Shorten links to just the website (🔗 imgur.com)</span></label>
         </div>
       </div>
 
@@ -205,6 +207,8 @@
         <div class="toggles">
           <label class="toggle"><input type="checkbox" name="highlightFirst"><span>Pink glow for first-time chatters</span></label>
           <label class="toggle"><input type="checkbox" name="highlightMentions"><span>Brighter glow when someone @mentions you</span></label>
+          <label class="toggle"><input type="checkbox" name="highlightReturning"><span>Lavender "welcome back" when a regular chats for the first time this stream</span></label>
+          <label class="toggle"><input type="checkbox" name="highlightOwn"><span>Golden card for your own messages</span></label>
           <label class="toggle"><input type="checkbox" name="showConnected"><span>Show "connected" message when OBS loads it</span></label>
         </div>
       </div>
@@ -222,6 +226,10 @@
           <label class="field">
             <span>Label</span>
             <input type="text" name="counterLabel" placeholder='chat said "hexx"' autocomplete="off">
+          </label>
+          <label class="field range">
+            <span>Celebrate every <output data-for="counterMilestone"></output></span>
+            <input type="range" name="counterMilestone" min="0" max="500" step="5">
           </label>
           <p class="hint">
             Separate several words with commas and they all add to the same count. Each message

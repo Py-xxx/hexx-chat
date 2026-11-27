@@ -31,6 +31,8 @@
     animations: true,
     sparkles: true,
     edgeFade: true,        // soft fade where messages leave the column
+    combos: true,          // merge "catJAM catJAM catJAM" spam into one growing combo card
+    tidyLinks: true,       // show links as "🔗 website.com"
 
     // Emotes
     emotes7tv: true,
@@ -47,12 +49,15 @@
     // Highlights
     highlightFirst: true,
     highlightMentions: true,
+    highlightReturning: true, // "welcome back" on a regular's first message of the stream
+    highlightOwn: true,       // special card for the streamer's own messages
     showConnected: true,
 
     // Word counter (shown by its own Browser source: overlay.html?...&view=counter)
     counter: false,
     counterWords: '',      // comma separated: all of these add to one count
     counterLabel: '',      // empty = 'chat said "word"'
+    counterMilestone: 100, // celebrate every N counts (0 = off)
   };
 
   // Colours picked from the CinnamonHexx banner, used for "theme" name colours.

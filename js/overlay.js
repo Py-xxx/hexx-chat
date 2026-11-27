@@ -64,6 +64,7 @@
     root.setProperty('--badge-scale', cfg.badgeScale);
     root.setProperty('--card-bg', `rgba(24, 8, 40, ${a})`);
     root.setProperty('--card-bg-hi', `rgba(60, 24, 88, ${Math.min(1, a + 0.12)})`);
+    root.setProperty('--card-bg-own', `rgba(150, 70, 38, ${Math.min(0.92, a + 0.25)})`);
     root.setProperty('--accent', cfg.accent);
     root.setProperty('--border', rgba(accent, Math.max(0.35, Math.min(0.85, a + 0.3))));
     root.setProperty('--glow', rgba(accent, 0.12 + a * 0.3));
@@ -88,6 +89,8 @@
     b.toggle('hl-first', cfg.highlightFirst);
     b.toggle('hl-mention', cfg.highlightMentions);
     b.toggle('view-counter', COUNTER_VIEW);
+    b.toggle('hl-returning', cfg.highlightReturning);
+    b.toggle('hl-own', cfg.highlightOwn);
     document.body.className = document.body.className.replace(/\bfont-\S+/g, '').trim();
     b.add('font-name-' + cfg.nameFont, 'font-text-' + cfg.textFont);
 
@@ -147,6 +150,16 @@
     return parts;
   }
 
+  const LINK_RE = /^(?:https?:\/\/|www\.)\S+$|^[\w-]+(?:\.[\w-]+)+\/\S*$/i;
+
+  function linkHost(url) {
+    try {
+      return new URL(/^https?:/i.test(url) ? url : 'https://' + url).hostname.replace(/^www\./, '');
+    } catch {
+      return 'link';
+    }
+  }
+
   function renderParts(parts, container) {
     let lastGroup = null;     // the emote a zero-width emote can sit on
     let pendingSpace = null;  // whitespace between that emote and the next part
@@ -190,8 +203,13 @@
       } else {
         lastGroup = null;
         wordCount++;
-        // Colour @mentions inside messages
-        if (/^@\w+/.test(p.text)) {
+        if (cfg.tidyLinks && LINK_RE.test(p.text)) {
+          const link = document.createElement('span');
+          link.className = 'link';
+          link.textContent = '🔗 ' + linkHost(p.text);
+          container.append(link);
+        } else if (/^@\w+/.test(p.text)) {
+          // Colour @mentions inside messages
           const at = document.createElement('span');
           at.className = 'at';
           at.textContent = p.text;
@@ -237,12 +255,27 @@
 
   function addChat(m) {
     if (isFiltered(m)) return;
+    const returning = TEST ? !!m.sampleReturning : trackReturning(m);
 
+    let text = m.text;
+    if (m.replyTo) {
+      // Twitch prefixes replies with "@name " — the reply line already says who.
+      text = text.replace(new RegExp('^@' + m.replyTo.replace(/\W/g, '\\$&') + '\\s*', 'i'), '');
+    }
+    // If the reply prefix was removed, emote positions shifted — rebuild them.
+    const parts = text === m.text ? buildParts(text, m.emotes) : buildParts(text, shiftEmotes(m, text));
+
+    const combo = cfg.combos ? comboKey(parts) : null;
+    if (combo && joinCombo(combo)) return;
+
+    const own = m.login === cfg.channel;
     const classes = [];
     if (m.firstMessage) classes.push('first');
+    else if (returning && !own) classes.push('returning');
     if (m.highlighted) classes.push('highlighted');
     if (m.action) classes.push('action');
-    if (m.login !== cfg.channel && mentionsStreamer(m.text)) classes.push('mention');
+    if (own) classes.push('own');
+    else if (mentionsStreamer(m.text)) classes.push('mention');
 
     const el = card(classes.join(' '));
     el.dataset.id = m.id || '';
@@ -251,14 +284,11 @@
     el.dataset.color = m.color || '';
     setNameColor(el, m.login, m.color);
 
-    let text = m.text;
     if (m.replyTo) {
       const reply = document.createElement('div');
       reply.className = 'reply';
       reply.textContent = '↪ replying to ' + m.replyTo;
       el.append(reply);
-      // Twitch prefixes replies with "@name " — the reply line already says who.
-      text = text.replace(new RegExp('^@' + m.replyTo.replace(/\W/g, '\\$&') + '\\s*', 'i'), '');
     }
 
     const meta = document.createElement('div');
@@ -271,18 +301,122 @@
     name.textContent = m.displayName;
     const tag = document.createElement('span');
     tag.className = 'tag';
-    tag.textContent = 'first chat ✦';
+    tag.textContent = m.firstMessage ? 'first chat ✦' : 'welcome back ✦';
     meta.append(badges, name, tag);
 
     const body = document.createElement('div');
     body.className = 'text';
-    // If the reply prefix was removed, emote positions shifted — rebuild them by name.
-    const parts = text === m.text ? buildParts(text, m.emotes) : buildParts(text, shiftEmotes(m, text));
     const { emoteOnly } = renderParts(parts, body);
     if (emoteOnly) el.classList.add('emote-only');
 
     el.append(meta, body);
     insert(el);
+    lastSingle = combo ? { key: combo.key, el } : null;
+  }
+
+  /* ---------------- Emote combos ---------------- */
+
+  // The newest card holding just one kind of emote, and the combo card if one is going.
+  let lastSingle = null;
+  let activeCombo = null;
+
+  /** If a message is only one emote (once or repeated), return it; otherwise null. */
+  function comboKey(parts) {
+    let found = null;
+    for (const p of parts) {
+      if (p.type === 'text') {
+        if (/^\s+$/.test(p.text)) continue;
+        return null;
+      }
+      if (p.zeroWidth) continue;
+      if (found && found.key !== p.name) return null;
+      found = found || { key: p.name, url: p.url };
+    }
+    return found;
+  }
+
+  function newestCard() {
+    const cards = chatEl.querySelectorAll('.msg:not(.leaving)');
+    return cards.length ? cards[cfg.direction === 'down' ? 0 : cards.length - 1] : null;
+  }
+
+  /** Add to a running combo, or turn the previous same-emote card into one. */
+  function joinCombo(combo) {
+    const newest = newestCard();
+    if (activeCombo && activeCombo.key === combo.key && activeCombo.el === newest) {
+      activeCombo.count++;
+      updateCombo(true);
+      return true;
+    }
+    if (lastSingle && lastSingle.key === combo.key && lastSingle.el === newest) {
+      const el = card('combo');
+      el.innerHTML += `<div class="combo-row"><span class="emote-group"><img alt=""></span>` +
+        `<span class="combo-x">×</span><span class="combo-num"></span></div><div class="combo-label">combo</div>`;
+      const img = el.querySelector('img');
+      img.src = combo.url;
+      img.alt = combo.key;
+      clearTimeout(newest._timer);
+      newest.replaceWith(el);
+      activeCombo = { key: combo.key, el, count: 2 };
+      lastSingle = null;
+      updateCombo(false);
+      return true;
+    }
+    return false;
+  }
+
+  function updateCombo(bump) {
+    const { el, count } = activeCombo;
+    const num = el.querySelector('.combo-num');
+    num.textContent = count;
+    if (bump) {
+      restartAnimation(num, 'bump');
+      if (cfg.animations && cfg.sparkles) burst(el, { count: 3 });
+    }
+    // A combo stays on screen while chat keeps it going.
+    setLifetime(el, cfg.lifetime);
+  }
+
+  function restartAnimation(el, cls) {
+    el.classList.remove(cls);
+    void el.offsetWidth;
+    el.classList.add(cls);
+  }
+
+  /* ---------------- Welcome back ---------------- */
+
+  // Remembers when each viewer last chatted (in OBS's own storage). A stream
+  // "session" starts after 6 quiet hours; a viewer seen before this session
+  // gets "welcome back" on their first message of it.
+  const SESSION_GAP = 6 * 60 * 60 * 1000;
+  const seen = { key: 'hexx-seen:' + cfg.channel, users: {}, start: Date.now(), saveTimer: null };
+
+  function loadSeen() {
+    try {
+      const d = JSON.parse(localStorage.getItem(seen.key) || 'null');
+      if (!d) return;
+      const now = Date.now();
+      const cutoff = now - 120 * 24 * 60 * 60 * 1000; // forget viewers not seen in 4 months
+      for (const [login, t] of Object.entries(d.users || {})) if (t > cutoff) seen.users[login] = t;
+      seen.start = now - d.lastActivity < SESSION_GAP ? d.start : now;
+    } catch { /* storage blocked: nobody is "returning" */ }
+  }
+
+  function saveSeen() {
+    clearTimeout(seen.saveTimer);
+    seen.saveTimer = setTimeout(() => {
+      try {
+        localStorage.setItem(seen.key, JSON.stringify({ users: seen.users, start: seen.start, lastActivity: Date.now() }));
+      } catch { /* ignore */ }
+    }, 3000);
+  }
+
+  function trackReturning(m) {
+    const login = (m.login || '').toLowerCase();
+    const last = seen.users[login];
+    seen.users[login] = Date.now();
+    saveSeen();
+    return !!last && last < seen.start;
   }
 
   /** Recompute Twitch emote ranges after trimming the start of a message. */
@@ -317,8 +451,12 @@
       oldest.forEach((o) => remove(o, 'pushed'));
     }
 
-    const life = lifetimeOverride !== undefined ? lifetimeOverride : cfg.lifetime;
-    if (life > 0) el._timer = setTimeout(() => remove(el, 'expire'), life * 1000);
+    setLifetime(el, lifetimeOverride !== undefined ? lifetimeOverride : cfg.lifetime);
+  }
+
+  function setLifetime(el, seconds) {
+    clearTimeout(el._timer);
+    if (seconds > 0) el._timer = setTimeout(() => remove(el, 'expire'), seconds * 1000);
   }
 
   function remove(el, mode) {
@@ -341,18 +479,20 @@
   }
 
   /** Little sparkles drifting up from a card as it fades away. */
-  function burst(el) {
+  function burst(el, opts = {}) {
     const r = el.getBoundingClientRect();
     if (!r.width) return;
-    const count = Math.min(9, 4 + Math.round(r.width / 90));
+    const count = opts.count || Math.min(9, 4 + Math.round(r.width / 90));
+    const spread = opts.spread || 1;
     for (let i = 0; i < count; i++) {
       const p = document.createElement('span');
       p.className = 'particle';
       p.innerHTML = HexxBadges.sparkle();
       p.style.left = (r.left + Math.random() * r.width) + 'px';
       p.style.top = (r.top + Math.random() * r.height) + 'px';
-      p.style.setProperty('--dx', (Math.random() * 40 - 20).toFixed(0) + 'px');
-      p.style.setProperty('--dy', (-30 - Math.random() * 50).toFixed(0) + 'px');
+      p.style.setProperty('--dx', ((Math.random() * 40 - 20) * spread).toFixed(0) + 'px');
+      p.style.setProperty('--dy', ((-30 - Math.random() * 50) * spread).toFixed(0) + 'px');
+      if (opts.big) p.classList.add('big');
       p.style.setProperty('--rot', (Math.random() * 180 - 90).toFixed(0) + 'deg');
       p.style.animationDelay = (Math.random() * 0.25).toFixed(2) + 's';
       fxEl.append(p);
@@ -397,6 +537,12 @@
     'brewing a potion of +2 vibes {VoHiYo}',
     '{7TV} {7TV}',
     'chat is so wholesome tonight {BTTV}',
+    'look what I found https://imgur.com/a/hexx-cat-pics {<3}',
+  ];
+  const OWN_TEXT = [
+    'thank you all for hanging out tonight {<3}',
+    'okay chat, one more round and then tea break',
+    'welcome in everyone {HeyGuys}',
   ];
   const TWITCH_SAMPLE_EMOTES = {
     Kappa: '25', '<3': '9', HeyGuys: '30259', CoolCat: '58127', SeemsGood: '64138',
@@ -415,11 +561,14 @@
 
   const COUNTER_SAMPLES = ['{w}', '{w} {w} {w}', 'omg {w}', '{w}!!!', 'chat, {w}'];
 
-  function sampleMessage(n) {
-    const u = SAMPLE_USERS[n % SAMPLE_USERS.length];
-    let tpl = SAMPLE_TEXT[n % SAMPLE_TEXT.length];
+  function sampleMessage(n, comboTpl) {
+    const own = !comboTpl && n % 11 === 6;
+    const u = own
+      ? { login: cfg.channel, badges: 'broadcaster/1,subscriber/0', info: 'subscriber/1', color: '' }
+      : SAMPLE_USERS[n % SAMPLE_USERS.length];
+    let tpl = comboTpl || (own ? OWN_TEXT[n % OWN_TEXT.length] : SAMPLE_TEXT[n % SAMPLE_TEXT.length]);
     const words = list(cfg.counterWords);
-    if (words.length && n % 3 === 1) {
+    if (!comboTpl && !own && words.length && n % 3 === 1) {
       tpl = COUNTER_SAMPLES[n % COUNTER_SAMPLES.length].replace(/\{w\}/g, words[n % words.length]);
     }
     tpl = tpl.replace('{channel}', cfg.channel || 'cinnamonhexx')
@@ -454,7 +603,8 @@
       emotes: emotesTag,
       text,
       action: false,
-      firstMessage: n % 9 === 4,
+      firstMessage: !own && n % 9 === 4,
+      sampleReturning: !own && n % 9 === 7,
       highlighted: false,
       replyTo: '',
     };
@@ -465,7 +615,19 @@
     const handle = COUNTER_VIEW ? countMessage : addChat;
     const prefill = Math.min(4, cfg.maxMessages);
     for (; n < prefill; n++) handle(sampleMessage(n));
+    let ticks = 0;
     const tick = () => {
+      // Every so often a few viewers spam the same emote, to show off combos.
+      if (++ticks % 5 === 0) {
+        const emote = pickThirdParty('7tv') || 'SeemsGood';
+        const tpl = TWITCH_SAMPLE_EMOTES[emote] ? '{' + emote + '}' : emote;
+        const size = 3 + Math.floor(Math.random() * 4);
+        for (let i = 0; i < size; i++) {
+          setTimeout(() => handle(sampleMessage(n++, i % 3 === 2 ? tpl + ' ' + tpl : tpl)), i * (350 + Math.random() * 400));
+        }
+        setTimeout(tick, size * 600 + 2000);
+        return;
+      }
       handle(sampleMessage(n++));
       setTimeout(tick, 1800 + Math.random() * 2400);
     };
@@ -500,6 +662,8 @@
         }
       } catch { /* storage blocked: count from 0 */ }
     }
+    const every = Math.floor(cfg.counterMilestone);
+    if (TEST && every > 3) counter.count = every - 3;
     counterEl.innerHTML =
       '<div class="counter-card"><span class="spark"></span>' +
       '<div class="counter-label"></div><div class="counter-num"></div></div>';
@@ -511,15 +675,32 @@
     if (!counterEl.firstChild) return;
     const words = list(cfg.counterWords);
     const label = cfg.counterLabel.trim() || (words.length ? `chat said "${words[0]}"` : 'pick a word on the settings page');
-    counterEl.querySelector('.counter-label').textContent = label;
+    if (!counterEl.firstChild.classList.contains('milestone')) {
+      counterEl.querySelector('.counter-label').textContent = label;
+    }
     const num = counterEl.querySelector('.counter-num');
     num.textContent = words.length ? counter.count.toLocaleString() : '–';
     if (bump) {
-      num.classList.remove('bump');
-      void num.offsetWidth; // restart the animation
-      num.classList.add('bump');
+      restartAnimation(num, 'bump');
       if (cfg.animations && cfg.sparkles) burst(counterEl.firstChild);
     }
+  }
+
+  /** Every `counterMilestone` counts: a big wobble, glow and shower of sparkles. */
+  function celebrate() {
+    const cardEl = counterEl.firstChild;
+    const label = cardEl.querySelector('.counter-label');
+    restartAnimation(cardEl, 'milestone');
+    label.textContent = '✦ ' + counter.count.toLocaleString() + '! ✦';
+    if (cfg.animations && cfg.sparkles) {
+      burst(cardEl, { count: 18, spread: 2.2, big: true });
+      setTimeout(() => burst(cardEl, { count: 10, spread: 1.6 }), 450);
+    }
+    clearTimeout(counter.celebrateTimer);
+    counter.celebrateTimer = setTimeout(() => {
+      cardEl.classList.remove('milestone');
+      renderCounter(false);
+    }, 3200);
   }
 
   function setCount(n) {
@@ -543,7 +724,11 @@
       return;
     }
     // Each message counts once, so spamming the word in one message doesn't inflate it.
-    if (counter.re && counter.re.test(m.text)) setCount(counter.count + 1);
+    if (counter.re && counter.re.test(m.text)) {
+      setCount(counter.count + 1);
+      const every = Math.floor(cfg.counterMilestone);
+      if (every > 0 && counter.count % every === 0) celebrate();
+    }
   }
 
   /* ---------------- Start ---------------- */
@@ -559,7 +744,10 @@
   });
 
   if (COUNTER_VIEW) initCounter();
-  else emotes.loadGlobal();
+  else {
+    emotes.loadGlobal();
+    if (!TEST) loadSeen();
+  }
 
   if (cfg.channel) {
     const chat = new TwitchChat(cfg.channel, {
