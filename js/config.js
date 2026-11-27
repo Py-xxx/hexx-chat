@@ -6,7 +6,7 @@
 (function () {
   const DEFAULTS = {
     // Connection
-    channel: '',
+    channel: 'cinnamonhexx', // used whenever the channel box is left empty
 
     // Layout
     fontSize: 20,          // px
@@ -27,6 +27,7 @@
     nameFont: 'pixel',     // 'pixel' | 'script' | 'clean'
     textFont: 'clean',     // 'clean' | 'pixel'
     badges: true,
+    badgeScale: 1,         // badge size multiplier (handy for custom badge art)
     animations: true,
     sparkles: true,
     edgeFade: true,        // soft fade where messages leave the column
@@ -47,6 +48,11 @@
     highlightFirst: true,
     highlightMentions: true,
     showConnected: true,
+
+    // Word counter (shown by its own Browser source: overlay.html?...&view=counter)
+    counter: false,
+    counterWords: '',      // comma separated: all of these add to one count
+    counterLabel: '',      // empty = 'chat said "word"'
   };
 
   // Colours picked from the CinnamonHexx banner, used for "theme" name colours.
@@ -81,7 +87,7 @@
         default: cfg[key] = raw;
       }
     }
-    cfg.channel = String(cfg.channel || '').trim().replace(/^#/, '').toLowerCase();
+    cfg.channel = String(cfg.channel || '').trim().replace(/^#/, '').toLowerCase() || DEFAULTS.channel;
     return cfg;
   }
 

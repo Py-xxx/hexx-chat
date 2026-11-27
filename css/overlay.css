@@ -97,10 +97,11 @@ body {
 .hide-badges .badges { display: none; }
 
 .badge {
-  height: 0.9em;
+  height: calc(0.9em * var(--badge-scale, 1));
   width: auto;
   filter: drop-shadow(0 0 3px rgba(255, 179, 71, 0.55));
 }
+.badge-img { height: calc(1.1em * var(--badge-scale, 1)); filter: drop-shadow(0 0 3px rgba(255, 179, 71, 0.4)); }
 
 .name {
   font-family: var(--name-font);
@@ -255,4 +256,60 @@ body:not(.hl-first) .msg.first .tag { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
   .animate .msg, .animate .spark { animation: none; }
+}
+
+/* ---------- Word counter (view=counter) ---------- */
+
+.view-counter #chat { display: none; }
+
+#counter {
+  display: none;
+  position: fixed;
+  inset: 0;
+  align-items: center;
+  justify-content: center;
+}
+.view-counter #counter { display: flex; }
+
+.counter-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.05em;
+  margin: var(--px);
+  padding: 0.45em 1.2em 0.4em;
+  background: var(--card-bg);
+  color: var(--text);
+  text-align: center;
+  font-size: var(--font-size);
+  box-shadow:
+    0 calc(var(--px) * -1) 0 0 var(--border),
+    0 var(--px) 0 0 var(--border),
+    calc(var(--px) * -1) 0 0 0 var(--border),
+    var(--px) 0 0 0 var(--border),
+    0 0 16px 3px var(--glow);
+}
+.counter-label {
+  font-family: 'Pixelify Sans', sans-serif;
+  font-weight: 600;
+  font-size: 0.8em;
+  color: var(--pink);
+  text-shadow: 0 0 8px rgba(255, 158, 207, 0.55), 0 1px 2px rgba(10, 0, 20, 0.9);
+  letter-spacing: 0.03em;
+}
+.counter-num {
+  font-family: 'Pixelify Sans', sans-serif;
+  font-weight: 700;
+  font-size: 2.1em;
+  line-height: 1.05;
+  color: var(--accent);
+  text-shadow: 0 0 14px var(--glow), 0 0 4px var(--accent), 0 2px 2px rgba(10, 0, 20, 0.9);
+  font-variant-numeric: tabular-nums;
+}
+.animate .counter-num.bump { animation: bump 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.4); }
+@keyframes bump {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.3); filter: brightness(1.4); }
+  100% { transform: scale(1); }
 }

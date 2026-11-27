@@ -222,6 +222,7 @@ input[type=range]::-moz-range-thumb {
   background: transparent;
   color-scheme: normal;
 }
+#counterFrame { top: 40px; height: 200px; }
 .col-outline {
   position: absolute;
   top: 0;
@@ -237,6 +238,12 @@ input[type=range]::-moz-range-thumb {
 .url-row { display: flex; gap: 8px; }
 .url-row input { font-size: 13px; font-family: ui-monospace, Menlo, monospace; min-width: 0; }
 .import { margin-top: 14px; }
+.counter-link { margin-top: 18px; padding-top: 14px; border-top: 2px dashed rgba(201, 162, 255, 0.25); }
+.counter-link h3 { font: 600 15px 'Pixelify Sans', sans-serif; color: var(--pink); margin: 0; }
+.counter-link .hint { margin: 6px 0 10px; }
+.counter-fields { margin-top: 12px; }
+.counter-fields.off { opacity: 0.45; pointer-events: none; }
+code { font-family: ui-monospace, Menlo, monospace; font-size: 0.92em; color: var(--amber); background: rgba(0, 0, 0, 0.3); padding: 1px 5px; }
 .import summary { cursor: pointer; color: var(--lavender); font-weight: 700; margin-bottom: 8px; }
 
 /* ---------- Toast ---------- */

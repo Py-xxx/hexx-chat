@@ -29,7 +29,7 @@ Bookmark that link. It's the settings page.
 
 ## 2. Set it up
 
-1. Open the settings page and type the Twitch channel name.
+1. Open the settings page. The channel is `cinnamonhexx` unless you type a different one.
 2. Play with the settings. The preview updates as you go. Switch the
    preview to **Live chat** to see the real chat.
 3. Click **Copy link**.
@@ -67,10 +67,33 @@ load its settings.
 | Badges | Broadcaster = triple moon, Mod = star, VIP = crystal, Subs = a moon that fills up (crescent → full at 12 months) |
 | Emotes | Turn 7TV / BTTV / FFZ on or off. Twitch emotes always work |
 | Filters | Hide bots, `!commands`, specific users or words |
+| Badge size | Makes badges bigger or smaller (useful for custom badge art) |
 | Highlights | Pink glow for first-time chatters, brighter glow when someone @mentions the streamer |
+| Word counter | Counts how many messages this stream contained a word (see below) |
 
 Messages deleted by a mod, and messages from users who get banned or timed
 out, disappear from the overlay too.
+
+## Word counter
+
+Turn on **Word counter** on the settings page and enter a word (or several,
+comma separated, which all add to the same count). It gets its own link: add
+it as a **second Browser source** (400 × 200) and put it anywhere on screen.
+
+- Each message counts once, so spamming the word in one message adds just 1.
+- Whole words only: `hexx` counts, but `hexxing` doesn't. Emote names work too.
+- The count survives OBS restarts and starts over after 6 hours with no new
+  counts, which in practice means the next stream.
+- You and your mods can type `!resetcount` or `!setcount 42` in chat.
+
+## Custom badge art
+
+Put square PNGs with transparent backgrounds into `assets/badges/` (on GitHub:
+open the folder → **Add file → Upload files**). Any file found replaces the
+built-in pixel badge, and badges without a file keep the pixel version:
+
+`broadcaster.png`, `moderator.png`, `vip.png`, `sub-1.png` (0–2 months),
+`sub-3.png` (3–5), `sub-6.png` (6–11), `sub-12.png` (12+)
 
 ## Good to know
 
@@ -95,8 +118,9 @@ css/settings.css  settings page styles
 js/config.js      default settings + link encoding
 js/twitch.js      anonymous Twitch chat connection
 js/emotes.js      7TV / BTTV / FFZ emotes (+ 7TV live updates)
-js/badges.js      pixel-art badges
+js/badges.js      pixel-art badges (+ custom images from assets/badges/)
 js/overlay.js     renders messages, emotes, animations
 js/settings.js    settings page logic
 assets/banner.webp  preview background
+assets/badges/      optional custom badge images
 ```

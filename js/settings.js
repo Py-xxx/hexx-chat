@@ -4,11 +4,12 @@
   const STORE_KEY = 'hexx-chat-settings';
 
   // Changing these needs the preview to reload; everything else restyles live.
-  const RELOAD_KEYS = ['channel', 'direction', 'emotes7tv', 'emotesBttv', 'emotesFfz', 'showConnected'];
+  const RELOAD_KEYS = ['channel', 'direction', 'emotes7tv', 'emotesBttv', 'emotesFfz', 'showConnected', 'counter', 'counterWords'];
 
   const $ = (sel) => document.querySelector(sel);
   const form = $('#form');
   const frame = $('#previewFrame');
+  const counterFrame = $('#counterFrame');
   let previewMode = 'sample';
   let cfg = loadInitial();
   let reloadTimer = null;
@@ -20,7 +21,7 @@
     if ([...search.keys()].some((k) => k in DEFAULTS)) return parse(location.search);
     try {
       const saved = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
-      if (saved && typeof saved === 'object') return { ...DEFAULTS, ...saved };
+      if (saved && typeof saved === 'object') return { ...DEFAULTS, ...saved, channel: saved.channel || DEFAULTS.channel };
     } catch { /* private window or blocked storage: just use defaults */ }
     return { ...DEFAULTS };
   }
@@ -49,7 +50,10 @@
     const type = typeof DEFAULTS[el.name];
     if (type === 'boolean') return el.checked;
     if (type === 'number') return parseFloat(el.value);
-    if (el.name === 'channel') return el.value.trim().replace(/^.*twitch\.tv\//i, '').replace(/^[#@]/, '').toLowerCase();
+    if (el.name === 'channel') {
+      const name = el.value.trim().replace(/^.*twitch\.tv\//i, '').replace(/^[#@]/, '').replace(/[/?#].*$/, '').toLowerCase();
+      return name || DEFAULTS.channel;
+    }
     return el.value;
   }
 
@@ -67,6 +71,7 @@
       lifetime: formatLifetime,
       maxMessages: (v) => v,
       cardOpacity: (v) => (v == 0 ? 'none' : v + '%'),
+      badgeScale: (v) => (+v).toFixed(1) + '×',
       width: (v) => v + 'px',
     };
     for (const out of document.querySelectorAll('output[data-for]')) {
@@ -117,8 +122,18 @@
     return base.href + toQuery(cfg);
   }
 
+  function counterLink() {
+    const base = new URL('overlay.html', location.href);
+    base.search = '';
+    base.hash = '';
+    return base.href + toQuery(cfg, { view: 'counter' });
+  }
+
   function updateLink() {
     $('#overlayUrl').value = overlayLink();
+    $('#counterUrl').value = counterLink();
+    $('#counterLinkBox').hidden = !cfg.counter;
+    $('#counterFields').classList.toggle('off', !cfg.counter);
     const missing = !cfg.channel;
     $('#noChannelWarn').hidden = !missing;
     $('#copyBtn').disabled = missing;
@@ -141,7 +156,13 @@
     toast(ok ? 'Copied! Now paste it into the OBS Browser source.' : 'Select the link and press Ctrl+C / ⌘C to copy it.');
   });
 
+  $('#copyCounterBtn').addEventListener('click', async () => {
+    const ok = await copy(counterLink());
+    toast(ok ? 'Counter link copied! Add it as a second Browser source.' : 'Select the link and press Ctrl+C / ⌘C to copy it.');
+  });
+
   $('#overlayUrl').addEventListener('focus', (e) => e.target.select());
+  $('#counterUrl').addEventListener('focus', (e) => e.target.select());
 
   $('#importBtn').addEventListener('click', () => {
     const raw = $('#importUrl').value.trim();
@@ -168,13 +189,16 @@
 
   /* ---------------- Preview ---------------- */
 
-  function previewSrc() {
+  function previewSrc(view) {
     const extra = previewMode === 'sample' ? { test: '1' } : {};
+    if (view) extra.view = view;
     return 'overlay.html' + toQuery({ ...cfg, showConnected: previewMode === 'live' && cfg.showConnected }, extra);
   }
 
   function reloadPreview() {
     frame.src = previewSrc();
+    counterFrame.hidden = !cfg.counter;
+    counterFrame.src = cfg.counter ? previewSrc('counter') : 'about:blank';
     positionColumn();
     const hint = $('#previewHint');
     if (previewMode === 'live') {
@@ -194,7 +218,9 @@
       return;
     }
     try {
-      frame.contentWindow.postMessage({ type: 'hexx-style', cfg: { ...cfg } }, '*');
+      for (const f of [frame, counterFrame]) {
+        f.contentWindow.postMessage({ type: 'hexx-style', cfg: { ...cfg } }, '*');
+      }
     } catch {
       reloadPreview();
     }
@@ -206,6 +232,9 @@
       el.style.width = cfg.width + 'px';
       el.style.left = left + 'px';
     }
+    // Counter sits in the opposite top corner of the preview.
+    counterFrame.style.width = '400px';
+    counterFrame.style.left = (cfg.align === 'right' ? 40 : 1920 - 400 - 40) + 'px';
   }
 
   function scaleStage() {

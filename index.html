@@ -29,6 +29,7 @@
         <div class="stage" id="stage">
           <div class="stage-inner" id="stageInner">
             <iframe id="previewFrame" title="Chat overlay preview"></iframe>
+            <iframe id="counterFrame" title="Word counter preview" hidden></iframe>
             <div class="col-outline" id="colOutline"></div>
           </div>
         </div>
@@ -53,6 +54,16 @@
           as long as the folder stays where it is.
         </p>
         <p class="hint">Changed a setting later? Copy the new link and paste it over the old one in the Browser source.</p>
+
+        <div class="counter-link" id="counterLinkBox" hidden>
+          <h3>✦ Word counter</h3>
+          <p class="hint">The counter is its own Browser source, so you can put it anywhere on screen.
+            Add another Browser source, paste this link, and set it to <b>400 × 200</b>.</p>
+          <div class="url-row">
+            <input id="counterUrl" type="text" readonly aria-label="Counter link">
+            <button type="button" id="copyCounterBtn" class="btn primary">Copy link</button>
+          </div>
+        </div>
 
         <details class="import">
           <summary>Edit an existing link</summary>
@@ -160,6 +171,10 @@
             <label class="swatch custom" title="Pick any colour"><input type="color" name="accent"></label>
           </div>
         </div>
+        <label class="field range">
+          <span>Badge size <output data-for="badgeScale"></output></span>
+          <input type="range" name="badgeScale" min="0.6" max="2" step="0.1">
+        </label>
         <label class="field">
           <span>Name colours</span>
           <select name="nameColors">
@@ -191,6 +206,29 @@
           <label class="toggle"><input type="checkbox" name="highlightFirst"><span>Pink glow for first-time chatters</span></label>
           <label class="toggle"><input type="checkbox" name="highlightMentions"><span>Brighter glow when someone @mentions you</span></label>
           <label class="toggle"><input type="checkbox" name="showConnected"><span>Show "connected" message when OBS loads it</span></label>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>✦ Word counter</h2>
+        <div class="toggles">
+          <label class="toggle"><input type="checkbox" name="counter"><span>Count how often chat says a word</span></label>
+        </div>
+        <div class="counter-fields" id="counterFields">
+          <label class="field">
+            <span>Word(s) to count</span>
+            <input type="text" name="counterWords" placeholder="hexx, or an emote like catJAM" autocomplete="off" spellcheck="false">
+          </label>
+          <label class="field">
+            <span>Label</span>
+            <input type="text" name="counterLabel" placeholder='chat said "hexx"' autocomplete="off">
+          </label>
+          <p class="hint">
+            Separate several words with commas and they all add to the same count. Each message
+            counts once, so spamming the word in one message only adds 1.
+            The count is kept if OBS restarts and starts over after 6 quiet hours (a new stream).
+            You and your mods can type <code>!resetcount</code> or <code>!setcount 42</code> in chat.
+          </p>
         </div>
       </div>
 

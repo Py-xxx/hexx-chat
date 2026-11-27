@@ -126,6 +126,27 @@
     return out;
   }
 
+  /*
+   * Custom badge art: drop PNGs with these names into assets/badges/ and they
+   * replace the built-in pixel sprites automatically. Missing files are fine,
+   * that badge just keeps its sprite.
+   */
+  const CUSTOM_FILES = ['broadcaster', 'moderator', 'vip', 'sub-1', 'sub-3', 'sub-6', 'sub-12'];
+  const custom = {};
+  for (const key of CUSTOM_FILES) {
+    const img = new Image();
+    const src = 'assets/badges/' + key + '.png';
+    img.onload = () => { custom[key] = src; };
+    img.src = src;
+  }
+
+  function badge(key, makeSprite) {
+    if (custom[key]) return `<img class="badge badge-img" src="${custom[key]}" alt="">`;
+    return cached(key, makeSprite);
+  }
+
+  const SUB_FILE = { 0: 'sub-1', 0.3: 'sub-3', 0.62: 'sub-6', 1: 'sub-12' };
+
   /** Returns badge HTML for a message's `badges` and `badge-info` tags. */
   function render(badgesTag, badgeInfoTag) {
     const badges = parseTag(badgesTag);
@@ -133,18 +154,18 @@
     const out = [];
 
     if ('broadcaster' in badges) {
-      out.push(cached('broadcaster', () => sprite(SPRITES.broadcaster, 'badge badge-wide')));
+      out.push(badge('broadcaster', () => sprite(SPRITES.broadcaster, 'badge badge-wide')));
     }
-    if ('moderator' in badges) {
-      out.push(cached('moderator', () => sprite(SPRITES.moderator, 'badge')));
+    if ('moderator' in badges || 'lead_moderator' in badges) {
+      out.push(badge('moderator', () => sprite(SPRITES.moderator, 'badge')));
     }
     if ('vip' in badges) {
-      out.push(cached('vip', () => sprite(SPRITES.vip, 'badge')));
+      out.push(badge('vip', () => sprite(SPRITES.vip, 'badge')));
     }
     if ('subscriber' in badges || 'founder' in badges) {
       const months = parseInt(info.subscriber || info.founder || badges.subscriber || '0', 10) || 0;
       const phase = subPhase(months);
-      out.push(cached('moon' + phase, () => sprite(moonRows(phase), 'badge')));
+      out.push(badge(SUB_FILE[phase], () => sprite(moonRows(phase), 'badge')));
     }
     return out.join('');
   }

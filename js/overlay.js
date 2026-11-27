@@ -3,6 +3,7 @@
   const { parse, list, THEME_PALETTE } = window.HexxConfig;
   const params = new URLSearchParams(location.search);
   const TEST = params.get('test') === '1';
+  const COUNTER_VIEW = params.get('view') === 'counter';
 
   let cfg = parse(location.search);
   const chatEl = document.getElementById('chat');
@@ -60,6 +61,7 @@
     root.setProperty('--font-size', cfg.fontSize + 'px');
     root.setProperty('--emote-h', `calc(${cfg.fontSize}px * ${cfg.emoteScale})`);
     root.setProperty('--px', Math.max(2, Math.round(cfg.fontSize * 0.13)) + 'px');
+    root.setProperty('--badge-scale', cfg.badgeScale);
     root.setProperty('--card-bg', `rgba(24, 8, 40, ${a})`);
     root.setProperty('--card-bg-hi', `rgba(60, 24, 88, ${Math.min(1, a + 0.12)})`);
     root.setProperty('--accent', cfg.accent);
@@ -85,12 +87,14 @@
     b.toggle('edge-fade', cfg.edgeFade);
     b.toggle('hl-first', cfg.highlightFirst);
     b.toggle('hl-mention', cfg.highlightMentions);
+    b.toggle('view-counter', COUNTER_VIEW);
     document.body.className = document.body.className.replace(/\bfont-\S+/g, '').trim();
     b.add('font-name-' + cfg.nameFont, 'font-text-' + cfg.textFont);
 
     for (const el of chatEl.querySelectorAll('.msg[data-login]')) {
       setNameColor(el, el.dataset.login, el.dataset.color);
     }
+    if (COUNTER_VIEW) renderCounter(false);
   }
 
   function setNameColor(el, login, color) {
@@ -409,9 +413,15 @@
     return zw.length ? zw[Math.floor(Math.random() * zw.length)].name : null;
   }
 
+  const COUNTER_SAMPLES = ['{w}', '{w} {w} {w}', 'omg {w}', '{w}!!!', 'chat, {w}'];
+
   function sampleMessage(n) {
     const u = SAMPLE_USERS[n % SAMPLE_USERS.length];
     let tpl = SAMPLE_TEXT[n % SAMPLE_TEXT.length];
+    const words = list(cfg.counterWords);
+    if (words.length && n % 3 === 1) {
+      tpl = COUNTER_SAMPLES[n % COUNTER_SAMPLES.length].replace(/\{w\}/g, words[n % words.length]);
+    }
     tpl = tpl.replace('{channel}', cfg.channel || 'cinnamonhexx')
       .replace('{ZW}', () => pickZeroWidth() || '')
       .replace(/\{7TV\}/g, () => pickThirdParty('7tv') || 'nice')
@@ -452,13 +462,88 @@
 
   function startSamples() {
     let n = 0;
+    const handle = COUNTER_VIEW ? countMessage : addChat;
     const prefill = Math.min(4, cfg.maxMessages);
-    for (; n < prefill; n++) addChat(sampleMessage(n));
+    for (; n < prefill; n++) handle(sampleMessage(n));
     const tick = () => {
-      addChat(sampleMessage(n++));
+      handle(sampleMessage(n++));
       setTimeout(tick, 1800 + Math.random() * 2400);
     };
     setTimeout(tick, 1500);
+  }
+
+  /* ---------------- Word counter ---------------- */
+
+  // A new stream = nobody said the word for 6 hours. Mods can also type
+  // !resetcount or !setcount 42 in chat.
+  const COUNTER_IDLE_RESET = 6 * 60 * 60 * 1000;
+  const counterEl = document.getElementById('counter');
+  const counter = { count: 0, last: 0, re: null, key: '' };
+
+  function counterRegex(words) {
+    if (!words.length) return null;
+    const esc = words.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    // Whole words only: "hexx" counts, "hexxing" doesn't.
+    return new RegExp('(?:^|[^\\p{L}\\p{N}_])(?:' + esc.join('|') + ')(?=$|[^\\p{L}\\p{N}_])', 'iu');
+  }
+
+  function initCounter() {
+    const words = list(cfg.counterWords);
+    counter.re = counterRegex(words);
+    counter.key = 'hexx-counter:' + cfg.channel + ':' + words.join(',');
+    if (!TEST) {
+      try {
+        const saved = JSON.parse(localStorage.getItem(counter.key) || 'null');
+        if (saved && Date.now() - saved.last < COUNTER_IDLE_RESET) {
+          counter.count = saved.count;
+          counter.last = saved.last;
+        }
+      } catch { /* storage blocked: count from 0 */ }
+    }
+    counterEl.innerHTML =
+      '<div class="counter-card"><span class="spark"></span>' +
+      '<div class="counter-label"></div><div class="counter-num"></div></div>';
+    counterEl.querySelector('.spark').innerHTML = HexxBadges.sparkle();
+    renderCounter(false);
+  }
+
+  function renderCounter(bump) {
+    if (!counterEl.firstChild) return;
+    const words = list(cfg.counterWords);
+    const label = cfg.counterLabel.trim() || (words.length ? `chat said "${words[0]}"` : 'pick a word on the settings page');
+    counterEl.querySelector('.counter-label').textContent = label;
+    const num = counterEl.querySelector('.counter-num');
+    num.textContent = words.length ? counter.count.toLocaleString() : '–';
+    if (bump) {
+      num.classList.remove('bump');
+      void num.offsetWidth; // restart the animation
+      num.classList.add('bump');
+      if (cfg.animations && cfg.sparkles) burst(counterEl.firstChild);
+    }
+  }
+
+  function setCount(n) {
+    counter.count = Math.max(0, n);
+    counter.last = Date.now();
+    if (!TEST) {
+      try { localStorage.setItem(counter.key, JSON.stringify({ count: counter.count, last: counter.last })); } catch { /* ignore */ }
+    }
+    renderCounter(true);
+  }
+
+  function countMessage(m) {
+    const login = (m.login || '').toLowerCase();
+    if (cfg.hideBots && list(cfg.bots).includes(login)) return;
+    if (list(cfg.blockedUsers).includes(login)) return;
+
+    const isMod = /(^|,)(broadcaster|moderator|lead_moderator)\//.test(m.badges || '');
+    const cmd = /^!(resetcount|setcount)(?:\s+(\d+))?/i.exec(m.text.trim());
+    if (cmd && isMod) {
+      setCount(cmd[1].toLowerCase() === 'resetcount' ? 0 : parseInt(cmd[2] || '0', 10));
+      return;
+    }
+    // Each message counts once, so spamming the word in one message doesn't inflate it.
+    if (counter.re && counter.re.test(m.text)) setCount(counter.count + 1);
   }
 
   /* ---------------- Start ---------------- */
@@ -473,17 +558,22 @@
     }
   });
 
-  emotes.loadGlobal();
+  if (COUNTER_VIEW) initCounter();
+  else emotes.loadGlobal();
 
   if (cfg.channel) {
     const chat = new TwitchChat(cfg.channel, {
-      message: (m) => { if (!TEST) addChat(m); },
-      clearChat: (id) => { if (!TEST) clearChat(id); },
-      clearMessage: (id) => { if (!TEST) clearMessage(id); },
-      roomState: (roomId) => emotes.loadChannel(roomId),
+      message: (m) => {
+        if (TEST) return;
+        if (COUNTER_VIEW) countMessage(m);
+        else addChat(m);
+      },
+      clearChat: (id) => { if (!TEST && !COUNTER_VIEW) clearChat(id); },
+      clearMessage: (id) => { if (!TEST && !COUNTER_VIEW) clearMessage(id); },
+      roomState: (roomId) => { if (!COUNTER_VIEW) emotes.loadChannel(roomId); },
       status: (state, detail) => {
         console.info('[chat]', state, detail || '');
-        if (state === 'connected' && !TEST && cfg.showConnected && !chat.announced) {
+        if (state === 'connected' && !TEST && !COUNTER_VIEW && cfg.showConnected && !chat.announced) {
           chat.announced = true;
           addSystem('✦ connected to #' + cfg.channel + ' ✦', 6);
         }
@@ -491,7 +581,7 @@
       },
     });
     chat.connect();
-  } else if (!TEST) {
+  } else if (!TEST && !COUNTER_VIEW) {
     addSystem('✦ Add your Twitch channel on the settings page ✦', 0);
   }
 
