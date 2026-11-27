@@ -58,6 +58,35 @@ h1, h2 { font-family: 'Pixelify Sans', sans-serif; font-weight: 600; margin: 0; 
   .top { padding: 20px 16px 4px; }
 }
 
+/* Wide screens: the header stays put and each column scrolls on its own. */
+@media (min-width: 961px) {
+  body { height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+  .top { flex: none; width: 100%; }
+  .layout {
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    grid-template-rows: minmax(0, 1fr);
+    align-items: stretch;
+    padding-bottom: 0;
+  }
+  .left, .right {
+    position: static;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    align-content: start;
+    /* room for the panels' pixel borders and glow */
+    padding: 6px 10px 36px;
+    margin: 0 -10px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(201, 162, 255, 0.4) transparent;
+  }
+  .left::-webkit-scrollbar, .right::-webkit-scrollbar { width: 8px; }
+  .left::-webkit-scrollbar-thumb, .right::-webkit-scrollbar-thumb { background: rgba(201, 162, 255, 0.4); }
+  .left::-webkit-scrollbar-track, .right::-webkit-scrollbar-track { background: transparent; }
+}
+
 /* Pixel-bordered panels, same trick as the chat cards */
 .panel {
   background: var(--panel);
