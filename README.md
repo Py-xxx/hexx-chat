@@ -1,5 +1,7 @@
 # Hexx Chat ✦ Twitch chat overlay for OBS
 
+**Settings page:** https://py-xxx.github.io/hexx-chat/
+
 A cozy, translucent chat column made to match the CinnamonHexx art: pixel-glow
 cards, moon/star/crystal badges, sparkles when messages fade, and every emote
 (Twitch, 7TV, BetterTTV, FrankerFaceZ, including animated and zero-width ones).
